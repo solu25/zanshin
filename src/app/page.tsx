@@ -14,7 +14,10 @@ export default async function Home() {
   try {
     const supabase = await createClient();
     const { data, error: authError } = await supabase.auth.getUser();
-    if (authError) {
+    // AuthSessionMissingError is expected when there's no logged-in user —
+    // treat it as null user (the page will redirect to /login below).
+    // Only surface other auth errors as real bugs.
+    if (authError && !/Auth session missing/i.test(authError.message)) {
       debugError = `auth.getUser: ${authError.message}`;
     } else {
       user = data.user
