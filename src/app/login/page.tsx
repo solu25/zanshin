@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { ensureDevUserExists } from "./actions";
 
 type State =
   | { kind: "ready" }
@@ -43,31 +44,26 @@ export default function LoginPage() {
     const supabase = createClient();
     const password = devPasswordFor(email);
 
-    // Try to sign in first — fastest path for returning users.
+    // Step 1 (server-side): make sure a user row exists with this email
+    // and password. Uses the admin client with email_confirm: true so no
+    // email is ever sent — avoids hitting Supabase's email rate limit.
+    const ensured = await ensureDevUserExists(email, password);
+    if (!ensured.ok) {
+      setState({ kind: "error", message: ensured.error });
+      return;
+    }
+
+    // Step 2 (client-side): actually sign in to establish a session cookie.
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-
     if (signInError) {
-      // Likely "Invalid login credentials" → user doesn't exist yet, sign them up.
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (signUpError) {
-        setState({
-          kind: "error",
-          message: signUpError.message,
-        });
-        return;
-      }
+      setState({ kind: "error", message: signInError.message });
+      return;
     }
 
-    // After signUp with email confirmation disabled, the user is auto-signed in.
-    // Route to onboarding (page.tsx /onboarding/team also redirects to / if a
-    // team already exists).
+    // Route to onboarding (the / page also redirects there if no team yet).
     router.push("/onboarding/team");
     router.refresh();
   }
