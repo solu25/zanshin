@@ -55,6 +55,7 @@ export type DashboardData = {
       is_complete: boolean;
     }>;
   }>;
+  pendingInvites: number;
 };
 
 /**
@@ -99,6 +100,7 @@ export async function loadDashboardData(): Promise<DashboardData | null> {
     myDailyOneQ,
     shipsQ,
     trailEntriesQ,
+    pendingInvitesQ,
   ] = await Promise.all([
     supabase
       .from("main_goals")
@@ -142,6 +144,12 @@ export async function loadDashboardData(): Promise<DashboardData | null> {
       .select("user_id, date, text, is_complete")
       .eq("team_id", teamId)
       .in("date", trailDates),
+    // Pending invitations (not yet accepted)
+    supabase
+      .from("invitations")
+      .select("id", { count: "exact", head: true })
+      .eq("team_id", teamId)
+      .is("accepted_at", null),
   ]);
 
   // ---- Members (with my-flag, with today's daily_one) ----
@@ -295,5 +303,6 @@ export async function loadDashboardData(): Promise<DashboardData | null> {
       : null,
     recentShips,
     trail,
+    pendingInvites: pendingInvitesQ.count ?? 0,
   };
 }

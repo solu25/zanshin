@@ -1,5 +1,4 @@
 import type { DashboardData } from "@/lib/dashboard-data";
-import { todayISO } from "@/lib/dates";
 import { TodayCard } from "./today-card";
 import { WeekTrail } from "./week-trail";
 
@@ -104,4 +103,3 @@ export function MainColumn({
   );
 }
 
-void todayISO; // keep import alive for IDEs that strip unused

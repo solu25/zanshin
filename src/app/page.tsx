@@ -48,6 +48,7 @@ export default async function Home() {
         team={data.team}
         mainGoal={data.mainGoal}
         members={data.members}
+        pendingInvites={data.pendingInvites}
         myProfile={myProfile}
       />
       <MainColumn
