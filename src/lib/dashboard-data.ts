@@ -1,5 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
-import { isoWeekMonday, todayISO, weekTrailDates } from "@/lib/dates";
+import {
+  dayLabel,
+  isoWeekMonday,
+  restOfWorkweekDates,
+  todayISO,
+  weekTrailDates,
+} from "@/lib/dates";
 
 export type Member = {
   user_id: string;
@@ -55,6 +61,11 @@ export type DashboardData = {
       is_complete: boolean;
     }>;
   }>;
+  futureDays: Array<{
+    date: string;
+    label: string;
+    text: string | null;
+  }>;
   pendingInvites: number;
 };
 
@@ -92,6 +103,7 @@ export async function loadDashboardData(): Promise<DashboardData | null> {
   const today = todayISO();
   const weekStart = isoWeekMonday();
   const trailDates = weekTrailDates();
+  const futureDates = restOfWorkweekDates();
 
   const [
     mainGoalQ,
@@ -101,6 +113,7 @@ export async function loadDashboardData(): Promise<DashboardData | null> {
     shipsQ,
     trailEntriesQ,
     pendingInvitesQ,
+    futureDailyQ,
   ] = await Promise.all([
     supabase
       .from("main_goals")
@@ -150,6 +163,15 @@ export async function loadDashboardData(): Promise<DashboardData | null> {
       .select("id", { count: "exact", head: true })
       .eq("team_id", teamId)
       .is("accepted_at", null),
+    // My daily_ones for the rest of this workweek (Tue-Fri rail)
+    futureDates.length === 0
+      ? Promise.resolve({ data: [] as Array<{ date: string; text: string }>, error: null })
+      : supabase
+          .from("daily_ones")
+          .select("date, text")
+          .eq("user_id", user.id)
+          .eq("team_id", teamId)
+          .in("date", futureDates),
   ]);
 
   // ---- Members (with my-flag, with today's daily_one) ----
@@ -303,6 +325,18 @@ export async function loadDashboardData(): Promise<DashboardData | null> {
       : null,
     recentShips,
     trail,
+    futureDays: (() => {
+      const map = new Map(
+        ((futureDailyQ.data ?? []) as Array<{ date: string; text: string }>).map(
+          (r) => [r.date, r.text],
+        ),
+      );
+      return futureDates.map((date) => ({
+        date,
+        label: dayLabel(date),
+        text: map.get(date) ?? null,
+      }));
+    })(),
     pendingInvites: pendingInvitesQ.count ?? 0,
   };
 }

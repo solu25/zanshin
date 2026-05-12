@@ -39,12 +39,14 @@ function dayOfWeek(today: Date = new Date()) {
 export function NewMainColumn({
   weeklyGoal,
   myDailyOne,
+  futureDays,
 }: {
   user: DashboardData["user"];
   weeklyGoal: DashboardData["weeklyGoal"];
   members: DashboardData["members"];
   myDailyOne: DashboardData["myDailyOne"];
   trail: DashboardData["trail"];
+  futureDays: DashboardData["futureDays"];
 }) {
   const day = dayOfWeek();
   const dayInWorkWeek = Math.min(day, 5);
@@ -76,7 +78,7 @@ export function NewMainColumn({
       {/* Body: today + day rail */}
       <div className="flex flex-1 min-h-0 gap-4">
         <TodayCard myDailyOne={myDailyOne} />
-        <DayRailMock />
+        <DayRail futureDays={futureDays} />
       </div>
     </main>
   );
@@ -535,77 +537,170 @@ function TodayCard({
   );
 }
 
-/* ---------- DAY RAIL (mock for now) ---------- */
+/* ---------- DAY RAIL ---------- */
 
-function DayRailMock() {
+function DayRail({
+  futureDays,
+}: {
+  futureDays: DashboardData["futureDays"];
+}) {
   const [selected, setSelected] = useState<string | null>(null);
 
-  const days = [
-    { id: "tue", label: "TUE" },
-    { id: "wed", label: "WED" },
-    { id: "thu", label: "THU" },
-    { id: "fri", label: "FRI" },
-  ];
+  if (futureDays.length === 0) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-start rounded-input border border-dashed border-mist bg-page px-4 py-6">
+        <span className="text-[10px] italic text-linen">
+          no future days this week
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-2">
-      {days.map((d) => {
-        const isSelected = selected === d.id;
-        if (isSelected) {
-          return (
-            <div
-              key={d.id}
-              className="flex flex-col items-start rounded-input border-[1.5px] border-coral bg-page px-4 py-3.5"
-            >
-              <div className="flex w-full items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-[1.4px] text-coral">
-                  {d.label}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setSelected(null)}
-                  className="text-[9px] italic text-coral"
-                >
-                  selected
-                </button>
-              </div>
-              <div className="h-2.5 w-full" />
-              <div className="flex w-full items-center gap-2 rounded-[8px] border border-mist bg-white px-2.5 py-2">
-                <span className="text-[13px] font-semibold text-coral">+</span>
-                <input
-                  type="text"
-                  placeholder={`plan one thing for ${d.label.toLowerCase()}`}
-                  className="flex-1 bg-transparent text-xs italic text-charcoal placeholder:italic placeholder:text-linen focus:outline-none"
-                />
-              </div>
-              <div className="h-2 w-full" />
-              <div className="flex w-full items-center gap-1.5">
-                {["draft", "review", "ship"].map((c) => (
-                  <span
-                    key={c}
-                    className="rounded-pill border border-mist px-2 py-0.5 text-[9px] text-linen"
-                  >
-                    {c}
-                  </span>
-                ))}
-              </div>
-            </div>
-          );
-        }
-        return (
+      {futureDays.map((d) =>
+        selected === d.date ? (
+          <DayPillExpanded
+            key={d.date}
+            day={d}
+            onClose={() => setSelected(null)}
+          />
+        ) : (
+          <DayPillCompact
+            key={d.date}
+            day={d}
+            onSelect={() => setSelected(d.date)}
+          />
+        ),
+      )}
+    </div>
+  );
+}
+
+function DayPillCompact({
+  day,
+  onSelect,
+}: {
+  day: DashboardData["futureDays"][number];
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className="flex items-center justify-between rounded-input border border-mist bg-page px-3.5 py-3 text-left hover:border-coral/40"
+    >
+      <span className="text-[10px] font-bold uppercase tracking-[1.4px] text-linen">
+        {day.label}
+      </span>
+      {day.text ? (
+        <span className="ml-2 truncate text-[11px] text-charcoal-soft">
+          {day.text}
+        </span>
+      ) : (
+        <span className="text-[10px] italic text-linen">+ add</span>
+      )}
+    </button>
+  );
+}
+
+function DayPillExpanded({
+  day,
+  onClose,
+}: {
+  day: DashboardData["futureDays"][number];
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [draft, setDraft] = useState(day.text ?? "");
+  const [error, setError] = useState<string | null>(null);
+
+  function commit() {
+    const trimmed = draft.trim();
+    if (!trimmed) {
+      onClose();
+      return;
+    }
+    if (trimmed === day.text) {
+      onClose();
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const result = await setDailyOne(trimmed, day.date);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      onClose();
+      router.refresh();
+    });
+  }
+
+  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      commit();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setDraft(day.text ?? "");
+      onClose();
+    }
+  }
+
+  const dayWord = day.label.split(" ")[0].toLowerCase();
+
+  return (
+    <div className="flex flex-col items-start rounded-input border-[1.5px] border-coral bg-page px-4 py-3.5">
+      <div className="flex w-full items-center justify-between">
+        <span className="text-[10px] font-bold uppercase tracking-[1.4px] text-coral">
+          {day.label}
+        </span>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-[9px] italic text-coral hover:text-charcoal"
+        >
+          {day.text ? "close" : "selected"}
+        </button>
+      </div>
+      <div className="h-2.5 w-full" />
+      <div className="flex w-full items-center gap-2 rounded-[8px] border border-mist bg-white px-2.5 py-2 focus-within:border-coral">
+        <span className="text-[13px] font-semibold text-coral">+</span>
+        <input
+          type="text"
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={handleKeyDown}
+          disabled={pending}
+          maxLength={280}
+          placeholder={`plan one thing for ${dayWord}`}
+          className="flex-1 bg-transparent text-xs text-charcoal placeholder:italic placeholder:text-linen focus:outline-none disabled:opacity-50"
+        />
+        <span className="text-[9px] italic text-linen">⏎</span>
+      </div>
+      <div className="h-2 w-full" />
+      <div className="flex w-full items-center gap-1.5">
+        {["draft", "review", "ship"].map((c) => (
           <button
-            key={d.id}
             type="button"
-            onClick={() => setSelected(d.id)}
-            className="flex items-center justify-between rounded-input border border-mist bg-page px-3.5 py-3 hover:border-coral/40"
+            key={c}
+            onClick={() =>
+              setDraft((prev) => (prev ? `${prev} ${c}` : `${c} `))
+            }
+            disabled={pending}
+            className="rounded-pill border border-mist px-2 py-0.5 text-[9px] text-linen hover:border-coral hover:text-coral"
           >
-            <span className="text-[10px] font-bold uppercase tracking-[1.4px] text-linen">
-              {d.label}
-            </span>
-            <span className="text-[10px] italic text-linen">+ add</span>
+            {c}
           </button>
-        );
-      })}
+        ))}
+      </div>
+      {error && (
+        <span className="mt-2 text-[10px] italic text-coral">{error}</span>
+      )}
     </div>
   );
 }

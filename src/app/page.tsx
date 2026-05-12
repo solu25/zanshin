@@ -57,6 +57,7 @@ export default async function Home() {
         members={data.members}
         myDailyOne={data.myDailyOne}
         trail={data.trail}
+        futureDays={data.futureDays}
       />
       <ShippedColumn ships={data.recentShips} currentUserId={data.user.id} />
     </div>

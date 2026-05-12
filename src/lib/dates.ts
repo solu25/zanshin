@@ -78,3 +78,35 @@ export function weekTrailDates(today: Date = new Date()): string[] {
   if (trail.length < 4) trail.push(addDaysISO(todayStr, 1));
   return trail.slice(0, 4);
 }
+
+/**
+ * Workdays of THIS week that fall after today (Mon–Fri).
+ * - Mon today → [Tue, Wed, Thu, Fri]
+ * - Tue today → [Wed, Thu, Fri]
+ * - Fri today / weekend → []
+ */
+export function restOfWorkweekDates(today: Date = new Date()): string[] {
+  const todayStr = todayISO(today);
+  const day = today.getDay(); // 0 = Sun .. 6 = Sat
+  const monday = addDaysISO(todayStr, day === 0 ? -6 : -(day - 1));
+  const out: string[] = [];
+  for (let i = 0; i < 5; i++) {
+    const d = addDaysISO(monday, i);
+    if (d > todayStr) out.push(d);
+  }
+  return out;
+}
+
+/**
+ * Returns the short uppercase weekday + month-day label for a YYYY-MM-DD string.
+ * Example: "2026-05-12" → "TUE · MAY 12"
+ */
+export function dayLabel(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  const wd = date.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase();
+  const md = date
+    .toLocaleDateString("en-US", { month: "short", day: "numeric" })
+    .toUpperCase();
+  return `${wd} · ${md}`;
+}

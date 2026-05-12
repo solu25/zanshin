@@ -27,19 +27,25 @@ async function authedClient() {
 }
 
 /**
- * Create or update today's daily_one (main one-thing) for the current user.
- * Idempotent: re-submitting overwrites.
+ * Create or update a daily_one (main one-thing) for the current user on a
+ * given date. Defaults to today. Idempotent: re-submitting overwrites.
  */
-export async function setDailyOne(text: string): Promise<Result<{ id: string }>> {
+export async function setDailyOne(
+  text: string,
+  date?: string,
+): Promise<Result<{ id: string }>> {
   const trimmed = text.trim();
-  if (!trimmed) return { ok: false, error: "Type something for today's main" };
+  if (!trimmed) return { ok: false, error: "Type something for the day" };
   if (trimmed.length > 280)
     return { ok: false, error: "Keep it under 280 characters" };
 
   const { supabase, user, teamId } = await authedClient();
   if (!user || !teamId) return { ok: false, error: "Not authenticated" };
 
-  const today = todayISO();
+  const targetDate = date ?? todayISO();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate))
+    return { ok: false, error: "Invalid date" };
+
   const { data, error } = await supabase
     .from("daily_ones")
     .upsert(
@@ -47,7 +53,7 @@ export async function setDailyOne(text: string): Promise<Result<{ id: string }>>
         user_id: user.id,
         team_id: teamId,
         text: trimmed,
-        date: today,
+        date: targetDate,
       },
       { onConflict: "user_id,date" },
     )
@@ -58,16 +64,16 @@ export async function setDailyOne(text: string): Promise<Result<{ id: string }>>
   return { ok: true, data: { id: data!.id } };
 }
 
-export async function deleteDailyOne(): Promise<Result> {
+export async function deleteDailyOne(date?: string): Promise<Result> {
   const { supabase, user } = await authedClient();
   if (!user) return { ok: false, error: "Not authenticated" };
 
-  const today = todayISO();
+  const targetDate = date ?? todayISO();
   const { error } = await supabase
     .from("daily_ones")
     .delete()
     .eq("user_id", user.id)
-    .eq("date", today);
+    .eq("date", targetDate);
 
   if (error) return { ok: false, error: error.message };
   return { ok: true };
