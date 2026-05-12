@@ -216,13 +216,14 @@ export function TodayCard({
               setEditingMain(true);
               setEditText(myDailyOne.text);
             }}
-            className="group flex w-full items-center gap-3 rounded-input border-[1.5px] border-coral bg-page px-4 py-3.5 text-left transition-colors hover:bg-coral/[.03]"
+            className="group flex w-full items-center gap-3 rounded-input border-[1.5px] border-coral bg-page px-4 py-3.5 text-left transition-colors hover:bg-coral/[.04]"
           >
             <span className="text-base font-medium text-charcoal">
               {myDailyOne.text}
             </span>
-            <span className="ml-auto text-xs text-linen group-hover:text-charcoal-soft">
-              ✎
+            <span className="ml-auto inline-flex items-center gap-1 rounded-pill border border-mist bg-white px-2 py-0.5 text-[10px] font-medium text-charcoal-soft transition-colors group-hover:border-coral group-hover:bg-coral/[.06] group-hover:text-coral">
+              <span>✎</span>
+              <span>edit</span>
             </span>
           </button>
         )}

@@ -3,12 +3,11 @@ import { TodayCard } from "./today-card";
 import { WeekTrail } from "./week-trail";
 
 function formatToday() {
-  return new Date()
-    .toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-    });
+  return new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
 }
 
 function weekNumber(today: Date = new Date()) {
@@ -38,15 +37,14 @@ export function MainColumn({
     avatar_color: me?.avatar_color ?? "coral",
   };
 
-  // Are there other team members who haven't set their daily one yet?
   const otherMembersUnset = members.filter(
     (m) => !m.is_you && !m.daily_one_today,
   ).length;
 
   return (
-    <main className="flex-1 bg-page px-10 py-7 flex flex-col">
-      {/* Header row */}
-      <div className="flex items-center justify-between pb-4 border-b border-mist-soft">
+    <main className="flex-1 min-w-0 flex flex-col bg-page">
+      {/* Header — pinned at the top */}
+      <div className="shrink-0 flex items-center justify-between border-b border-mist-soft px-10 py-5">
         <p className="text-[13px] font-medium text-charcoal">
           Today · {formatToday()} · day 1 · WEEK {weekNumber()}
         </p>
@@ -57,39 +55,38 @@ export function MainColumn({
         </p>
       </div>
 
-      {/* Weekly slice */}
-      <div className="mt-5">
-        <div className="flex items-center gap-2">
-          <span className="h-0.5 w-3.5 bg-coral" />
-          <span className="text-[10px] font-bold tracking-[1.8px] text-coral uppercase">
-            This week&apos;s slice
-          </span>
+      {/* Scrollable content region */}
+      <div className="flex-1 overflow-y-auto px-10 py-7">
+        {/* Weekly slice */}
+        <section>
+          <div className="flex items-center gap-2">
+            <span className="h-0.5 w-3.5 bg-coral" />
+            <span className="text-[10px] font-bold tracking-[1.8px] text-coral uppercase">
+              This week&apos;s slice
+            </span>
+          </div>
+          <h1 className="mt-2 text-[22px] font-medium leading-snug tracking-[-0.4px] text-charcoal">
+            {weeklyGoal?.text ?? "No weekly goal set yet."}
+          </h1>
+        </section>
+
+        {/* Today's mega-card */}
+        <div className="mt-6">
+          <TodayCard
+            myProfile={myProfile}
+            myDailyOne={myDailyOne}
+            otherMembersUnset={otherMembersUnset}
+          />
         </div>
-        <h1 className="mt-2 text-[22px] font-medium leading-snug tracking-[-0.4px] text-charcoal">
-          {weeklyGoal?.text ?? "No weekly goal set yet."}
-        </h1>
+
+        {/* Week trail */}
+        <div className="mt-8">
+          <WeekTrail trail={trail} currentUserId={user.id} />
+        </div>
       </div>
 
-      {/* Today's mega-card */}
-      <div className="mt-6">
-        <TodayCard
-          myProfile={myProfile}
-          myDailyOne={myDailyOne}
-          otherMembersUnset={otherMembersUnset}
-        />
-      </div>
-
-      {/* Spacer that pushes trail to bottom if there's room */}
-      <div className="mt-6" />
-
-      {/* Week trail */}
-      <WeekTrail trail={trail} currentUserId={user.id} />
-
-      {/* Spacer */}
-      <div className="flex-1" />
-
-      {/* Footer hint */}
-      <footer className="pt-4 mt-6 border-t border-mist-soft flex items-center justify-between text-[11px] italic text-linen">
+      {/* Footer — pinned at the bottom */}
+      <footer className="shrink-0 flex items-center justify-between border-t border-mist-soft px-10 py-3.5 text-[11px] italic text-linen">
         <span>
           {myDailyOne
             ? "Main is locked. Bonuses are optional and editable all day."
@@ -102,4 +99,3 @@ export function MainColumn({
     </main>
   );
 }
-

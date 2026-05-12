@@ -166,13 +166,16 @@ function ExpandedSidebar({
         type="button"
         onClick={onEditGoal}
         aria-label="Edit main goal"
-        className="group mt-7 w-full rounded-input border border-mist bg-white p-4 text-left transition-colors hover:border-coral"
+        className="group mt-7 w-full rounded-input border border-mist bg-white p-4 text-left transition-all hover:border-coral hover:shadow-[0_2px_8px_rgba(237,106,90,0.08)]"
       >
         <div className="flex items-center justify-between">
           <span className="text-[9px] font-bold tracking-[1.6px] text-coral uppercase">
             Main goal
           </span>
-          <span className="text-xs text-linen group-hover:text-coral">✎</span>
+          <span className="inline-flex items-center gap-1 rounded-pill border border-mist bg-mist-soft px-2 py-0.5 text-[9px] font-medium text-charcoal-soft transition-colors group-hover:border-coral group-hover:bg-coral/[.08] group-hover:text-coral">
+            <span>✎</span>
+            <span>edit</span>
+          </span>
         </div>
         <p className="mt-2 text-[13px] font-medium leading-snug text-charcoal">
           {mainGoal?.text ?? "Set a main goal."}
