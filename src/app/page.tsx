@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loadDashboardData } from "@/lib/dashboard-data";
 import { Sidebar } from "@/components/dashboard/sidebar";
-import { MainColumn } from "@/components/dashboard/main-column";
+import { NewMainColumn } from "@/components/dashboard/new-main-column";
 import { ShippedColumn } from "@/components/dashboard/shipped-column";
 
 export default async function Home() {
@@ -51,7 +51,7 @@ export default async function Home() {
         pendingInvites={data.pendingInvites}
         myProfile={myProfile}
       />
-      <MainColumn
+      <NewMainColumn
         user={data.user}
         weeklyGoal={data.weeklyGoal}
         members={data.members}
