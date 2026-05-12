@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Avatar } from "@/components/avatar";
 import type { DashboardData } from "@/lib/dashboard-data";
 import { InviteModal } from "./invite-modal";
+import { EditMainGoalModal } from "./edit-main-goal-modal";
 
 const STORAGE_KEY = "zanshin.sidebar.collapsed";
 
@@ -43,6 +44,7 @@ export function Sidebar({
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [editGoalOpen, setEditGoalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   // Hydrate collapse state from localStorage
@@ -103,6 +105,7 @@ export function Sidebar({
             pendingInvites={pendingInvites}
             myProfile={myProfile}
             onInvite={() => setInviteOpen(true)}
+            onEditGoal={() => setEditGoalOpen(true)}
           />
         )}
       </aside>
@@ -111,6 +114,13 @@ export function Sidebar({
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
         teamName={team.name}
+      />
+
+      <EditMainGoalModal
+        open={editGoalOpen}
+        onClose={() => setEditGoalOpen(false)}
+        initialText={mainGoal?.text ?? ""}
+        initialDeadline={mainGoal?.deadline ?? ""}
       />
     </>
   );
@@ -126,6 +136,7 @@ function ExpandedSidebar({
   pendingInvites,
   myProfile,
   onInvite,
+  onEditGoal,
 }: {
   team: DashboardData["team"];
   mainGoal: DashboardData["mainGoal"];
@@ -133,6 +144,7 @@ function ExpandedSidebar({
   pendingInvites: number;
   myProfile: { display_name: string; avatar_color: string };
   onInvite: () => void;
+  onEditGoal: () => void;
 }) {
   const totalWeeks = mainGoal ? weeksOut(mainGoal.deadline) : 0;
   const memberCount = members.length;
@@ -150,17 +162,20 @@ function ExpandedSidebar({
       </div>
 
       {/* Main goal card */}
-      <div className="mt-7 rounded-input border border-mist bg-white p-4">
+      <button
+        type="button"
+        onClick={onEditGoal}
+        aria-label="Edit main goal"
+        className="group mt-7 w-full rounded-input border border-mist bg-white p-4 text-left transition-colors hover:border-coral"
+      >
         <div className="flex items-center justify-between">
           <span className="text-[9px] font-bold tracking-[1.6px] text-coral uppercase">
             Main goal
           </span>
-          <span className="cursor-pointer text-xs text-linen hover:text-charcoal-soft">
-            ✎
-          </span>
+          <span className="text-xs text-linen group-hover:text-coral">✎</span>
         </div>
         <p className="mt-2 text-[13px] font-medium leading-snug text-charcoal">
-          {mainGoal?.text ?? "Set a main goal in onboarding."}
+          {mainGoal?.text ?? "Set a main goal."}
         </p>
         {mainGoal && (
           <div className="mt-2.5 flex items-center justify-between text-[10px]">
@@ -170,7 +185,7 @@ function ExpandedSidebar({
             <span className="font-semibold text-charcoal">{totalWeeks} wk</span>
           </div>
         )}
-      </div>
+      </button>
 
       {/* Team card */}
       <div className="mt-3.5 rounded-input border border-mist bg-white p-3">
