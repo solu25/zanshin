@@ -9,6 +9,7 @@ import {
   setDailyOne,
   toggleBonus,
 } from "@/app/actions/daily-actions";
+import { updateWeeklyGoal } from "@/app/actions/goal-actions";
 
 function formatToday() {
   return new Date().toLocaleDateString("en-US", {
@@ -83,20 +84,83 @@ export function NewMainColumn({
 /* ---------- GOAL BANNER ---------- */
 
 function GoalBanner({ text, dayInWeek }: { text: string; dayInWeek: number }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(text);
+  const [error, setError] = useState<string | null>(null);
+
+  function commit() {
+    const trimmed = draft.trim();
+    if (!trimmed) {
+      setEditing(false);
+      setDraft(text);
+      return;
+    }
+    if (trimmed === text) {
+      setEditing(false);
+      return;
+    }
+    startTransition(async () => {
+      const result = await updateWeeklyGoal(trimmed);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setError(null);
+      setEditing(false);
+      router.refresh();
+    });
+  }
+
+  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      commit();
+    } else if (e.key === "Escape") {
+      setDraft(text);
+      setEditing(false);
+      setError(null);
+    }
+  }
+
   return (
     <div className="flex items-center gap-[18px] rounded-input border-[1.5px] border-coral bg-page px-[18px] py-3">
       <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
         <span className="text-[9px] font-bold uppercase tracking-[1.8px] text-coral">
           This Week&apos;s Goal
         </span>
-        {text ? (
-          <span className="truncate text-[15px] font-semibold tracking-[-0.2px] text-charcoal">
-            {text}
-          </span>
+        {editing ? (
+          <input
+            type="text"
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={handleKeyDown}
+            placeholder="what's the focus for this week?"
+            disabled={pending}
+            maxLength={280}
+            className="w-full border-b-2 border-coral bg-transparent text-[15px] font-semibold tracking-[-0.2px] text-charcoal placeholder:italic placeholder:font-normal placeholder:text-linen focus:outline-none disabled:opacity-50"
+          />
         ) : (
-          <span className="text-[15px] italic text-linen">
-            what&apos;s the focus for this week?
-          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(text);
+              setEditing(true);
+            }}
+            className="w-full border-b border-transparent text-left text-[15px] font-semibold tracking-[-0.2px] text-charcoal hover:border-mist focus:border-coral focus:outline-none"
+          >
+            {text || (
+              <span className="font-normal italic text-linen">
+                what&apos;s the focus for this week?
+              </span>
+            )}
+          </button>
+        )}
+        {error && (
+          <span className="text-[10px] italic text-coral">{error}</span>
         )}
       </div>
       <div className="flex flex-col items-end gap-0.5">

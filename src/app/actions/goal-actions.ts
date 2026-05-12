@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { isoWeekMonday } from "@/lib/dates";
 
 type Result = { ok: true } | { ok: false; error: string };
 
@@ -68,5 +69,30 @@ export async function updateMainGoal({
     if (error) return { ok: false, error: error.message };
   }
 
+  return { ok: true };
+}
+
+/**
+ * Upsert this week's goal for the user's team. Used by the inline-editable
+ * banner on the dashboard — no redirect, returns a Result.
+ */
+export async function updateWeeklyGoal(text: string): Promise<Result> {
+  const trimmed = text.trim();
+  if (!trimmed) return { ok: false, error: "Weekly goal is required" };
+  if (trimmed.length > 280)
+    return { ok: false, error: "Keep it under 280 characters" };
+
+  const { supabase, user, teamId } = await authedClient();
+  if (!user || !teamId) return { ok: false, error: "Not authenticated" };
+
+  const weekStart = isoWeekMonday();
+  const { error } = await supabase
+    .from("weekly_goals")
+    .upsert(
+      { team_id: teamId, text: trimmed, week_start: weekStart, created_by: user.id },
+      { onConflict: "team_id,week_start" },
+    );
+
+  if (error) return { ok: false, error: error.message };
   return { ok: true };
 }
