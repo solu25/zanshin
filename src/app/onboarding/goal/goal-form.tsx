@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { setMainGoal } from "./actions";
 
 const EXAMPLE_GOALS = [
@@ -12,11 +12,24 @@ const EXAMPLE_GOALS = [
   "Close $50k in new revenue",
 ];
 
+function formatDate(iso: string) {
+  if (!iso) return "Pick a date";
+  // Parse "YYYY-MM-DD" as local-date so we don't shift back a day in earlier timezones
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 export function GoalForm({ defaultDeadline }: { defaultDeadline: string }) {
   const [text, setText] = useState("");
   const [deadline, setDeadline] = useState(defaultDeadline);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   function handleSubmit(formData: FormData) {
     setError(null);
@@ -26,12 +39,34 @@ export function GoalForm({ defaultDeadline }: { defaultDeadline: string }) {
     });
   }
 
-  // Weeks until deadline (used in the meta label)
+  function openDatePicker() {
+    const input = dateInputRef.current;
+    if (!input) return;
+    // showPicker() is the modern way; fall back to focus + click for older browsers
+    if (typeof input.showPicker === "function") {
+      try {
+        input.showPicker();
+        return;
+      } catch {
+        // Some browsers throw on showPicker() if focus isn't user-initiated;
+        // fall through to the focus+click fallback.
+      }
+    }
+    input.focus();
+    input.click();
+  }
+
+  // Weeks until deadline
   const weeksOut = (() => {
-    const target = new Date(deadline);
+    if (!deadline) return 0;
+    const [y, m, d] = deadline.split("-").map(Number);
+    const target = new Date(y, m - 1, d);
     const today = new Date();
-    const diff = Math.max(0, Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 7)));
-    return diff;
+    today.setHours(0, 0, 0, 0);
+    return Math.max(
+      0,
+      Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 7)),
+    );
   })();
 
   return (
@@ -58,23 +93,42 @@ export function GoalForm({ defaultDeadline }: { defaultDeadline: string }) {
         />
       </div>
 
-      {/* Date row */}
-      <div className="flex items-center gap-3">
+      {/* Date row — whole pill is clickable, opens native picker */}
+      <div className="flex items-center gap-3 flex-wrap">
         <span className="text-[10px] font-bold tracking-[1.8px] text-charcoal-soft uppercase">
           By when?
         </span>
+
+        <button
+          type="button"
+          onClick={openDatePicker}
+          disabled={pending}
+          className="group inline-flex items-center gap-2 rounded-pill border border-coral bg-white px-4 py-2 text-sm font-medium text-charcoal transition-colors hover:bg-coral/[.06] focus:outline-none focus:ring-2 focus:ring-coral/30 disabled:opacity-50"
+        >
+          <span aria-hidden>📅</span>
+          <span>{formatDate(deadline)}</span>
+          <span className="text-coral text-xs" aria-hidden>
+            ⌄
+          </span>
+        </button>
+
+        <span className="text-[11px] italic text-linen">
+          · {weeksOut} weeks out
+        </span>
+
+        {/* Hidden but functional date input — the visible button drives it. */}
         <input
+          ref={dateInputRef}
           name="deadline"
           type="date"
           required
           value={deadline}
           onChange={(e) => setDeadline(e.target.value)}
           disabled={pending}
-          className="rounded-pill border border-mist bg-mist-soft px-3 py-1.5 text-xs font-medium text-charcoal focus:border-coral focus:outline-none disabled:opacity-50"
+          aria-label="Deadline date"
+          className="sr-only"
+          tabIndex={-1}
         />
-        <span className="text-[11px] italic text-linen">
-          · {weeksOut} weeks out · click the date to change it
-        </span>
       </div>
 
       {/* Example chips */}
@@ -108,7 +162,7 @@ export function GoalForm({ defaultDeadline }: { defaultDeadline: string }) {
           <kbd className="rounded-sm border border-mist bg-mist-soft px-1.5 py-0.5 font-mono text-[10px] text-charcoal-soft">
             ↩
           </kbd>{" "}
-          enter to continue · pick the date to change it
+          enter to continue · tap the date to change it
         </p>
         <button
           type="submit"
