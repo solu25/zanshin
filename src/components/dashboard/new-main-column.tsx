@@ -6,6 +6,7 @@ import type { DashboardData } from "@/lib/dashboard-data";
 import {
   addBonus,
   deleteBonus,
+  deleteDailyOne,
   setDailyOne,
   toggleBonus,
 } from "@/app/actions/daily-actions";
@@ -232,6 +233,9 @@ function TodayCard({
   const [draftAdd, setDraftAdd] = useState("");
   const [focusedAdd, setFocusedAdd] = useState(false);
 
+  const [editingMain, setEditingMain] = useState(false);
+  const [editMainText, setEditMainText] = useState("");
+
   const isEmpty = myDailyOne === null;
 
   function commitMain(text: string) {
@@ -292,6 +296,47 @@ function TodayCard({
       e.preventDefault();
       if (draftMain.trim()) commitMain(draftMain);
     }
+  }
+
+  function commitEditMain() {
+    const trimmed = editMainText.trim();
+    if (!trimmed || trimmed === myDailyOne?.text) {
+      setEditingMain(false);
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const result = await setDailyOne(trimmed);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setEditingMain(false);
+      router.refresh();
+    });
+  }
+
+  function handleEditMainKeydown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      commitEditMain();
+    } else if (e.key === "Escape") {
+      setEditingMain(false);
+      setEditMainText(myDailyOne?.text ?? "");
+    }
+  }
+
+  function handleDeleteMain() {
+    setError(null);
+    startTransition(async () => {
+      const result = await deleteDailyOne();
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setEditingMain(false);
+      router.refresh();
+    });
   }
 
   return (
@@ -355,9 +400,41 @@ function TodayCard({
           {/* Main row */}
           <div className="group flex items-center gap-2.5">
             <span className="w-4 text-[13px] text-coral">★</span>
-            <span className="flex-1 text-[14px] font-medium text-charcoal">
-              {myDailyOne!.text}
-            </span>
+            {editingMain ? (
+              <input
+                type="text"
+                autoFocus
+                value={editMainText}
+                onChange={(e) => setEditMainText(e.target.value)}
+                onBlur={commitEditMain}
+                onKeyDown={handleEditMainKeydown}
+                disabled={pending}
+                maxLength={280}
+                className="flex-1 border-b-2 border-coral bg-transparent text-[14px] font-medium text-charcoal placeholder:italic placeholder:text-linen focus:outline-none disabled:opacity-50"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditMainText(myDailyOne!.text);
+                  setEditingMain(true);
+                }}
+                className="flex-1 border-b border-transparent text-left text-[14px] font-medium text-charcoal hover:border-mist focus:border-coral focus:outline-none"
+              >
+                {myDailyOne!.text}
+              </button>
+            )}
+            {!editingMain && (
+              <button
+                type="button"
+                onClick={handleDeleteMain}
+                disabled={pending}
+                aria-label="Delete main"
+                className="text-[11px] text-linen opacity-0 transition-opacity hover:text-coral group-hover:opacity-100"
+              >
+                ✕
+              </button>
+            )}
             <span className="text-[10px] italic text-linen">main</span>
           </div>
 
