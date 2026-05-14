@@ -30,7 +30,7 @@ export function OnboardingStepper({ current }: { current: Step }) {
       {prevStep && (
         <Link
           href={`/onboarding/${prevStep.key}?edit=1`}
-          className="absolute left-0 top-1/2 -translate-y-1/2 text-[10px] font-bold tracking-[1.8px] uppercase text-linen transition-colors hover:text-coral px-1.5 py-1"
+          className="absolute left-24 top-1/2 -translate-y-1/2 text-[10px] font-bold tracking-[1.8px] uppercase text-linen transition-colors hover:text-coral px-1.5 py-1"
           aria-label={`Back to ${prevStep.label.toLowerCase()} step`}
         >
           ← BACK
