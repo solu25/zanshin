@@ -1,9 +1,17 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { OnboardingStepper } from "@/components/onboarding-stepper";
 import { GoalForm } from "./goal-form";
 
-export default async function GoalStepPage() {
+export default async function GoalStepPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ edit?: string }>;
+}) {
+  const sp = await searchParams;
+  const isEdit = sp.edit === "1";
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -19,14 +27,15 @@ export default async function GoalStepPage() {
   const teamId = memberships?.[0]?.team_id;
   if (!teamId) redirect("/onboarding/team");
 
-  // If an active main goal already exists, skip ahead.
+  // If an active main goal already exists, skip ahead (unless revisiting via back).
   const { data: existingGoal } = await supabase
     .from("main_goals")
     .select("id")
     .eq("team_id", teamId)
     .eq("is_active", true)
     .limit(1);
-  if (existingGoal && existingGoal.length > 0) redirect("/onboarding/week");
+  if (!isEdit && existingGoal && existingGoal.length > 0)
+    redirect("/onboarding/week");
 
   // Default deadline: ~3 months out (90 days)
   const defaultDeadline = new Date();
@@ -38,7 +47,13 @@ export default async function GoalStepPage() {
       <OnboardingStepper current="goal" />
 
       <div className="mt-16 w-full max-w-xl">
-        <div className="inline-flex items-center gap-2">
+        <Link
+          href="/onboarding/team?edit=1"
+          className="text-xs italic text-linen transition-colors hover:text-charcoal-soft"
+        >
+          ← back
+        </Link>
+        <div className="mt-6 inline-flex items-center gap-2">
           <span className="h-0.5 w-3 bg-coral" />
           <span className="text-[10px] font-bold tracking-[1.8px] text-coral uppercase">
             Step 2 of 4 · Main goal · ~3 months

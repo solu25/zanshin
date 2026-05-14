@@ -3,20 +3,28 @@ import { createClient } from "@/lib/supabase/server";
 import { OnboardingStepper } from "@/components/onboarding-stepper";
 import { TeamForm } from "./team-form";
 
-export default async function TeamStepPage() {
+export default async function TeamStepPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ edit?: string }>;
+}) {
+  const sp = await searchParams;
+  const isEdit = sp.edit === "1";
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Already on a team? Skip to the next step.
+  // Already on a team? Skip to the next step (unless explicitly revisiting via back link).
   const { data: memberships } = await supabase
     .from("team_members")
     .select("team_id")
     .eq("user_id", user.id)
     .limit(1);
-  if (memberships && memberships.length > 0) redirect("/onboarding/goal");
+  if (!isEdit && memberships && memberships.length > 0)
+    redirect("/onboarding/goal");
 
   return (
     <div className="w-full max-w-3xl flex flex-col items-center">

@@ -1,10 +1,18 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { OnboardingStepper } from "@/components/onboarding-stepper";
 import { isoWeekMonday } from "@/lib/dates";
 import { WeekForm } from "./week-form";
 
-export default async function WeekStepPage() {
+export default async function WeekStepPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ edit?: string }>;
+}) {
+  const sp = await searchParams;
+  const isEdit = sp.edit === "1";
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -29,7 +37,7 @@ export default async function WeekStepPage() {
   const mainGoal = mainGoals?.[0];
   if (!mainGoal) redirect("/onboarding/goal");
 
-  // If a weekly goal already exists for THIS week, skip ahead.
+  // If a weekly goal already exists for THIS week, skip ahead (unless revisiting via back).
   const weekStart = isoWeekMonday();
   const { data: existingWeekly } = await supabase
     .from("weekly_goals")
@@ -37,7 +45,7 @@ export default async function WeekStepPage() {
     .eq("team_id", teamId)
     .eq("week_start", weekStart)
     .limit(1);
-  if (existingWeekly && existingWeekly.length > 0)
+  if (!isEdit && existingWeekly && existingWeekly.length > 0)
     redirect("/onboarding/tools");
 
   // Format deadline for display
@@ -52,6 +60,13 @@ export default async function WeekStepPage() {
       <OnboardingStepper current="week" />
 
       <div className="mt-12 w-full max-w-xl">
+        <Link
+          href="/onboarding/goal?edit=1"
+          className="mb-4 inline-block text-xs italic text-linen transition-colors hover:text-charcoal-soft"
+        >
+          ← back
+        </Link>
+
         {/* Main goal context strip (mist-soft, faded) — lifted from Pencil P4 */}
         <div className="rounded-card border border-mist bg-mist-soft px-5 py-3">
           <div className="flex items-center justify-between">
