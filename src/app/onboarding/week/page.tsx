@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { OnboardingStepper } from "@/components/onboarding-stepper";
@@ -60,13 +59,6 @@ export default async function WeekStepPage({
       <OnboardingStepper current="week" />
 
       <div className="mt-12 w-full max-w-xl">
-        <Link
-          href="/onboarding/goal?edit=1"
-          className="mb-4 inline-block text-xs italic text-linen transition-colors hover:text-charcoal-soft"
-        >
-          ← back
-        </Link>
-
         {/* Main goal context strip (mist-soft, faded) — lifted from Pencil P4 */}
         <div className="rounded-card border border-mist bg-mist-soft px-5 py-3">
           <div className="flex items-center justify-between">

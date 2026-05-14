@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { OnboardingStepper } from "@/components/onboarding-stepper";
@@ -47,13 +46,7 @@ export default async function GoalStepPage({
       <OnboardingStepper current="goal" />
 
       <div className="mt-16 w-full max-w-xl">
-        <Link
-          href="/onboarding/team?edit=1"
-          className="text-xs italic text-linen transition-colors hover:text-charcoal-soft"
-        >
-          ← back
-        </Link>
-        <div className="mt-6 inline-flex items-center gap-2">
+        <div className="inline-flex items-center gap-2">
           <span className="h-0.5 w-3 bg-coral" />
           <span className="text-[10px] font-bold tracking-[1.8px] text-coral uppercase">
             Step 2 of 4 · Main goal · ~3 months
