@@ -98,6 +98,30 @@ export function restOfWorkweekDates(today: Date = new Date()): string[] {
 }
 
 /**
+ * 5 YYYY-MM-DD strings for last week's Mon–Fri, in reverse-chronological order:
+ * [last Fri, last Thu, last Wed, last Tue, last Mon].
+ *
+ * "Last week" = the calendar workweek ending on the most recent Sunday-or-before.
+ * - If today is Mon: walks back to last Sunday, then to its preceding Mon.
+ * - If today is Sun: this Sunday IS the boundary; walks to the Mon 6 days before.
+ */
+export function lastWorkweekDates(today: Date = new Date()): string[] {
+  const todayStr = todayISO(today);
+  const day = today.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+  // Walk back to the most recent Sunday (today if Sunday, else previous Sunday)
+  const lastSunday = addDaysISO(todayStr, day === 0 ? 0 : -day);
+  // Last week's Mon is 6 days before that Sunday
+  const lastMon = addDaysISO(lastSunday, -6);
+  return [
+    addDaysISO(lastMon, 4), // last Fri
+    addDaysISO(lastMon, 3), // last Thu
+    addDaysISO(lastMon, 2), // last Wed
+    addDaysISO(lastMon, 1), // last Tue
+    lastMon, // last Mon
+  ];
+}
+
+/**
  * Returns the short uppercase weekday + month-day label for a YYYY-MM-DD string.
  * Example: "2026-05-12" → "TUE · MAY 12"
  */

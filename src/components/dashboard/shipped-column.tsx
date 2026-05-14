@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/avatar";
 import type { DashboardData } from "@/lib/dashboard-data";
 import { dropShip, reviewShip } from "@/app/actions/ship-actions";
+
+const COLLAPSED_KEY = "zanshin:shippedCollapsed";
 
 function relativeTime(iso: string): string {
   const then = new Date(iso).getTime();
@@ -50,6 +52,25 @@ export function ShippedColumn({
   const [needsEyes, setNeedsEyes] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(COLLAPSED_KEY);
+      if (stored === "1") setCollapsed(true);
+    } catch {}
+  }, []);
+
+  function toggleCollapsed() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(COLLAPSED_KEY, next ? "1" : "0");
+      } catch {}
+      return next;
+    });
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!description.trim() || pending) return;
@@ -80,6 +101,32 @@ export function ShippedColumn({
     });
   }
 
+  if (collapsed) {
+    return (
+      <aside className="flex w-[48px] shrink-0 flex-col items-center bg-mist-soft py-5">
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          aria-label="Expand shipped rail"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-charcoal-soft hover:bg-mist hover:text-coral"
+        >
+          ‹
+        </button>
+        <div className="mt-3 flex flex-1 flex-col items-center gap-2">
+          <span
+            className="text-[11px] font-bold tracking-[2.2px] text-coral uppercase"
+            style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}
+          >
+            Shipped
+          </span>
+          <span className="text-[10px] italic text-linen">
+            {ships.length}
+          </span>
+        </div>
+      </aside>
+    );
+  }
+
   return (
     <aside className="flex w-[380px] shrink-0 flex-col bg-mist-soft px-[22px] py-7 overflow-y-auto">
       {/* Header */}
@@ -90,9 +137,19 @@ export function ShippedColumn({
             Shipped
           </span>
         </div>
-        <span className="text-[11px] italic text-linen">
-          {ships.length} {ships.length === 1 ? "ship" : "ships"}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] italic text-linen">
+            {ships.length} {ships.length === 1 ? "ship" : "ships"}
+          </span>
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            aria-label="Collapse shipped rail"
+            className="flex h-6 w-6 items-center justify-center rounded-md text-charcoal-soft hover:bg-mist hover:text-coral"
+          >
+            ›
+          </button>
+        </div>
       </div>
 
       {/* Composer */}

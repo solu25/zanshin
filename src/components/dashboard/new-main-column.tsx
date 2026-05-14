@@ -11,6 +11,7 @@ import {
   toggleBonus,
 } from "@/app/actions/daily-actions";
 import { updateWeeklyGoal } from "@/app/actions/goal-actions";
+import { dayLabel, lastWorkweekDates } from "@/lib/dates";
 
 function formatToday() {
   return new Date().toLocaleDateString("en-US", {
@@ -179,6 +180,7 @@ function GoalBanner({ text, dayInWeek }: { text: string; dayInWeek: number }) {
 /* ---------- LAST WEEK (mock for now) ---------- */
 
 function LastWeekCardMock() {
+  const dates = lastWorkweekDates();
   return (
     <div className="rounded-input border border-mist bg-page px-[18px] py-3.5">
       <div className="flex items-center justify-between">
@@ -195,14 +197,14 @@ function LastWeekCardMock() {
       </div>
       <div className="h-2.5" />
       <div className="grid grid-cols-5 gap-2">
-        {["FRI", "THU", "WED", "TUE", "MON"].map((d) => (
+        {dates.map((iso) => (
           <div
-            key={d}
+            key={iso}
             className="flex flex-col gap-1 rounded-input border border-mist bg-white px-3 py-2.5 opacity-50"
           >
             <div className="flex items-center justify-between">
               <span className="text-[9px] font-bold uppercase tracking-[1.2px] text-linen">
-                {d}
+                {dayLabel(iso)}
               </span>
               <span className="text-[13px] font-semibold text-linen">—</span>
             </div>
