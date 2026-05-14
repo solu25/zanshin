@@ -132,15 +132,6 @@ export function ShippedColumn({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="h-0.5 w-3.5 bg-coral" />
-          <span className="text-[11px] font-bold tracking-[2.2px] text-coral uppercase">
-            Shipped
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] italic text-linen">
-            {ships.length} {ships.length === 1 ? "ship" : "ships"}
-          </span>
           <button
             type="button"
             onClick={toggleCollapsed}
@@ -149,7 +140,14 @@ export function ShippedColumn({
           >
             ›
           </button>
+          <span className="h-0.5 w-3.5 bg-coral" />
+          <span className="text-[11px] font-bold tracking-[2.2px] text-coral uppercase">
+            Shipped
+          </span>
         </div>
+        <span className="text-[11px] italic text-linen">
+          {ships.length} {ships.length === 1 ? "ship" : "ships"}
+        </span>
       </div>
 
       {/* Composer */}
