@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   dayLabel,
   isoWeekMonday,
-  restOfWorkweekDates,
+  nextWorkweekDates,
   todayISO,
   weekTrailDates,
 } from "@/lib/dates";
@@ -64,7 +64,7 @@ export type DashboardData = {
   futureDays: Array<{
     date: string;
     label: string;
-    text: string | null;
+    items: Array<{ id: string; text: string; kind: "main" | "bonus" }>;
   }>;
   pendingInvites: number;
 };
@@ -103,7 +103,7 @@ export async function loadDashboardData(): Promise<DashboardData | null> {
   const today = todayISO();
   const weekStart = isoWeekMonday();
   const trailDates = weekTrailDates();
-  const futureDates = restOfWorkweekDates();
+  const futureDates = nextWorkweekDates(4);
 
   const [
     mainGoalQ,
@@ -163,12 +163,22 @@ export async function loadDashboardData(): Promise<DashboardData | null> {
       .select("id", { count: "exact", head: true })
       .eq("team_id", teamId)
       .is("accepted_at", null),
-    // My daily_ones for the rest of this workweek (Tue-Fri rail)
+    // My daily_ones (with nested bonuses) for the next 4 workdays
     futureDates.length === 0
-      ? Promise.resolve({ data: [] as Array<{ date: string; text: string }>, error: null })
+      ? Promise.resolve({
+          data: [] as Array<{
+            id: string;
+            date: string;
+            text: string;
+            bonuses: Array<{ id: string; text: string; order_index: number }>;
+          }>,
+          error: null,
+        })
       : supabase
           .from("daily_ones")
-          .select("date, text")
+          .select(
+            "id, date, text, bonuses(id, text, order_index)",
+          )
           .eq("user_id", user.id)
           .eq("team_id", teamId)
           .in("date", futureDates),
@@ -326,16 +336,32 @@ export async function loadDashboardData(): Promise<DashboardData | null> {
     recentShips,
     trail,
     futureDays: (() => {
+      type FutureRow = {
+        id: string;
+        date: string;
+        text: string;
+        bonuses: Array<{ id: string; text: string; order_index: number }>;
+      };
       const map = new Map(
-        ((futureDailyQ.data ?? []) as Array<{ date: string; text: string }>).map(
-          (r) => [r.date, r.text],
-        ),
+        ((futureDailyQ.data ?? []) as FutureRow[]).map((r) => [r.date, r]),
       );
-      return futureDates.map((date) => ({
-        date,
-        label: dayLabel(date),
-        text: map.get(date) ?? null,
-      }));
+      return futureDates.map((date) => {
+        const row = map.get(date);
+        if (!row) {
+          return { date, label: dayLabel(date), items: [] };
+        }
+        const items: Array<{
+          id: string;
+          text: string;
+          kind: "main" | "bonus";
+        }> = [
+          { id: row.id, text: row.text, kind: "main" },
+          ...(row.bonuses ?? [])
+            .sort((a, b) => a.order_index - b.order_index)
+            .map((b) => ({ id: b.id, text: b.text, kind: "bonus" as const })),
+        ];
+        return { date, label: dayLabel(date), items };
+      });
     })(),
     pendingInvites: pendingInvitesQ.count ?? 0,
   };

@@ -80,29 +80,52 @@ export async function deleteDailyOne(date?: string): Promise<Result> {
 }
 
 /**
- * Add a bonus task under the current user's daily_one for today.
+ * Add a bonus task under the current user's daily_one for the given date
+ * (defaults to today). If no daily_one exists for that date yet, it auto-creates
+ * one using the bonus text as the daily_one's text — so future-day rails can
+ * just call addBonus(text, date) without first calling setDailyOne.
  */
-export async function addBonus(text: string): Promise<Result> {
+export async function addBonus(
+  text: string,
+  date?: string,
+): Promise<Result> {
   const trimmed = text.trim();
   if (!trimmed) return { ok: false, error: "Bonus needs text" };
   if (trimmed.length > 200)
     return { ok: false, error: "Keep it under 200 characters" };
 
-  const { supabase, user } = await authedClient();
-  if (!user) return { ok: false, error: "Not authenticated" };
+  const { supabase, user, teamId } = await authedClient();
+  if (!user || !teamId) return { ok: false, error: "Not authenticated" };
 
-  const today = todayISO();
+  const targetDate = date ?? todayISO();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(targetDate))
+    return { ok: false, error: "Invalid date" };
 
-  // Need the daily_one id first
+  // Need the daily_one id first — auto-create on future dates so the rail
+  // can append items without requiring an explicit "set the main" first.
   const { data: dailyOne, error: lookupErr } = await supabase
     .from("daily_ones")
     .select("id")
     .eq("user_id", user.id)
-    .eq("date", today)
+    .eq("date", targetDate)
     .maybeSingle();
 
   if (lookupErr) return { ok: false, error: lookupErr.message };
-  if (!dailyOne) return { ok: false, error: "Set the main thing first" };
+
+  if (!dailyOne) {
+    if (targetDate === todayISO()) {
+      return { ok: false, error: "Set the main thing first" };
+    }
+    // Future date: auto-create the daily_one with this text as the main.
+    const { error: createErr } = await supabase.from("daily_ones").insert({
+      user_id: user.id,
+      team_id: teamId,
+      text: trimmed,
+      date: targetDate,
+    });
+    if (createErr) return { ok: false, error: createErr.message };
+    return { ok: true };
+  }
 
   // Append at the end
   const { data: existing } = await supabase

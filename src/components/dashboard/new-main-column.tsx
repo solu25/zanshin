@@ -586,21 +586,32 @@ function DayPillCompact({
   day: DashboardData["futureDays"][number];
   onSelect: () => void;
 }) {
+  const hasItems = day.items.length > 0;
   return (
     <button
       type="button"
       onClick={onSelect}
-      className="flex items-center justify-between rounded-input border border-mist bg-page px-3.5 py-3 text-left hover:border-coral/40"
+      className="flex flex-col items-stretch gap-1.5 rounded-input border border-mist bg-page px-3.5 py-3 text-left hover:border-coral/40"
     >
-      <span className="text-[10px] font-bold uppercase tracking-[1.4px] text-linen">
-        {day.label}
-      </span>
-      {day.text ? (
-        <span className="ml-2 truncate text-[11px] text-charcoal-soft">
-          {day.text}
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-bold uppercase tracking-[1.4px] text-linen">
+          {day.label}
         </span>
-      ) : (
-        <span className="text-[10px] italic text-linen">+ add</span>
+        {!hasItems && (
+          <span className="text-[10px] italic text-linen">+ add</span>
+        )}
+      </div>
+      {hasItems && (
+        <div className="flex flex-col gap-1">
+          {day.items.map((item) => (
+            <div key={item.id} className="flex items-start gap-2">
+              <span className="mt-px text-[11px] text-linen">—</span>
+              <span className="flex-1 text-[11px] leading-snug text-charcoal">
+                {item.text}
+              </span>
+            </div>
+          ))}
+        </div>
       )}
     </button>
   );
@@ -615,27 +626,20 @@ function DayPillExpanded({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [draft, setDraft] = useState(day.text ?? "");
+  const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   function commit() {
     const trimmed = draft.trim();
-    if (!trimmed) {
-      onClose();
-      return;
-    }
-    if (trimmed === day.text) {
-      onClose();
-      return;
-    }
+    if (!trimmed) return; // empty submits are no-ops
     setError(null);
     startTransition(async () => {
-      const result = await setDailyOne(trimmed, day.date);
+      const result = await addBonus(trimmed, day.date);
       if (!result.ok) {
         setError(result.error);
         return;
       }
-      onClose();
+      setDraft("");
       router.refresh();
     });
   }
@@ -646,15 +650,16 @@ function DayPillExpanded({
       commit();
     } else if (e.key === "Escape") {
       e.preventDefault();
-      setDraft(day.text ?? "");
+      setDraft("");
       onClose();
     }
   }
 
   const dayWord = day.label.split(" ")[0].toLowerCase();
+  const hasItems = day.items.length > 0;
 
   return (
-    <div className="flex flex-col items-start rounded-input border-[1.5px] border-coral bg-page px-4 py-3.5">
+    <div className="flex flex-col items-stretch rounded-input border-[1.5px] border-coral bg-page px-4 py-3.5">
       <div className="flex w-full items-center justify-between">
         <span className="text-[10px] font-bold uppercase tracking-[1.4px] text-coral">
           {day.label}
@@ -664,9 +669,26 @@ function DayPillExpanded({
           onClick={onClose}
           className="text-[9px] italic text-coral hover:text-charcoal"
         >
-          {day.text ? "close" : "selected"}
+          close
         </button>
       </div>
+
+      {hasItems && (
+        <>
+          <div className="h-2.5 w-full" />
+          <div className="flex flex-col gap-1.5">
+            {day.items.map((item) => (
+              <div key={item.id} className="flex items-start gap-2">
+                <span className="mt-px text-[12px] text-linen">—</span>
+                <span className="flex-1 text-[12px] leading-snug text-charcoal">
+                  {item.text}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       <div className="h-2.5 w-full" />
       <div className="flex w-full items-center gap-2 rounded-[8px] border border-mist bg-white px-2.5 py-2 focus-within:border-coral">
         <span className="text-[13px] font-semibold text-coral">+</span>
@@ -675,30 +697,17 @@ function DayPillExpanded({
           autoFocus
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
           onKeyDown={handleKeyDown}
           disabled={pending}
           maxLength={280}
-          placeholder={`plan one thing for ${dayWord}`}
+          placeholder={
+            hasItems
+              ? "add another thing"
+              : `plan a thing for ${dayWord}`
+          }
           className="flex-1 bg-transparent text-xs text-charcoal placeholder:italic placeholder:text-linen focus:outline-none disabled:opacity-50"
         />
         <span className="text-[9px] italic text-linen">⏎</span>
-      </div>
-      <div className="h-2 w-full" />
-      <div className="flex w-full items-center gap-1.5">
-        {["draft", "review", "ship"].map((c) => (
-          <button
-            type="button"
-            key={c}
-            onClick={() =>
-              setDraft((prev) => (prev ? `${prev} ${c}` : `${c} `))
-            }
-            disabled={pending}
-            className="rounded-pill border border-mist px-2 py-0.5 text-[9px] text-linen hover:border-coral hover:text-coral"
-          >
-            {c}
-          </button>
-        ))}
       </div>
       {error && (
         <span className="mt-2 text-[10px] italic text-coral">{error}</span>

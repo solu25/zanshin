@@ -98,6 +98,32 @@ export function restOfWorkweekDates(today: Date = new Date()): string[] {
 }
 
 /**
+ * Always returns the next `count` weekdays after today, skipping Sat/Sun.
+ * Spans into next week as needed.
+ * - Mon today, count=4 → [Tue, Wed, Thu, Fri]
+ * - Wed today, count=4 → [Thu, Fri, next Mon, next Tue]
+ * - Fri today, count=4 → [next Mon, Tue, Wed, Thu]
+ */
+export function nextWorkweekDates(
+  count: number = 4,
+  today: Date = new Date(),
+): string[] {
+  const todayStr = todayISO(today);
+  const out: string[] = [];
+  let cursor = todayStr;
+  let safetyHops = 0;
+  while (out.length < count && safetyHops < 30) {
+    cursor = addDaysISO(cursor, 1);
+    const [y, m, d] = cursor.split("-").map(Number);
+    const date = new Date(y, m - 1, d);
+    const dow = date.getDay();
+    if (dow !== 0 && dow !== 6) out.push(cursor);
+    safetyHops += 1;
+  }
+  return out;
+}
+
+/**
  * 5 YYYY-MM-DD strings for last week's Mon–Fri, in reverse-chronological order:
  * [last Fri, last Thu, last Wed, last Tue, last Mon].
  *
