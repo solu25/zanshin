@@ -19,9 +19,31 @@ const STEPS: { key: Step; label: string }[] = [
  */
 export function OnboardingStepper({ current }: { current: Step }) {
   const currentIdx = STEPS.findIndex((s) => s.key === current);
+  const prevStep = currentIdx > 0 ? STEPS[currentIdx - 1] : null;
 
   return (
-    <div className="flex items-center gap-2 justify-center">
+    <div className="flex items-center gap-3 justify-center">
+      {/* Back link on the same row as the steps, on the left.
+          When there's no previous step (step 1), render an invisible
+          placeholder of the same width so the stepper stays optically
+          centered across all four pages. */}
+      {prevStep ? (
+        <Link
+          href={`/onboarding/${prevStep.key}?edit=1`}
+          className="text-[10px] font-bold tracking-[1.8px] uppercase text-linen transition-colors hover:text-coral px-1.5 py-1"
+          aria-label={`Back to ${prevStep.label.toLowerCase()} step`}
+        >
+          ← BACK
+        </Link>
+      ) : (
+        <span
+          aria-hidden
+          className="invisible text-[10px] font-bold tracking-[1.8px] uppercase px-1.5 py-1"
+        >
+          ← BACK
+        </span>
+      )}
+
       {STEPS.map((step, i) => {
         const isDone = i < currentIdx;
         const isCurrent = i === currentIdx;
