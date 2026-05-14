@@ -93,9 +93,11 @@ export function Sidebar({
 
         {collapsed ? (
           <CollapsedRail
+            mainGoal={mainGoal}
             members={members}
             myProfile={myProfile}
             onInvite={() => setInviteOpen(true)}
+            onEditGoal={() => setEditGoalOpen(true)}
           />
         ) : (
           <ExpandedSidebar
@@ -266,26 +268,66 @@ function ExpandedSidebar({
 }
 
 // ---------------------------------------------------------------------------
-// Collapsed (56px) — narrow rail with vertical avatars + invite icon
+// Collapsed (56px) — narrow rail with compressed goal indicator + avatars
 // ---------------------------------------------------------------------------
 function CollapsedRail({
+  mainGoal,
   members,
   myProfile,
   onInvite,
+  onEditGoal,
 }: {
+  mainGoal: DashboardData["mainGoal"];
   members: DashboardData["members"];
   myProfile: { display_name: string; avatar_color: string };
   onInvite: () => void;
+  onEditGoal: () => void;
 }) {
+  const totalWeeks = mainGoal ? weeksOut(mainGoal.deadline) : 0;
+  // "Current week of N": rough — count weeks elapsed since deadline-totalWeeks.
+  // For now, totalWeeks is "weeks remaining"; we display it as "of N" with the
+  // current week computed from the same baseline as the expanded card.
+  const weeksLeft = totalWeeks;
+
   return (
-    <div className="flex h-full flex-col items-center justify-between pt-12 pb-3">
-      {/* Brand mark only */}
+    <div className="flex h-full flex-col items-center pt-12 pb-3">
+      {/* Brand mark */}
       <div className="flex items-baseline gap-0.5">
         <span className="text-sm font-bold text-coral">.</span>
       </div>
 
+      {/* Compressed MAIN GOAL indicator */}
+      {mainGoal ? (
+        <button
+          type="button"
+          onClick={onEditGoal}
+          aria-label="Edit main goal"
+          title={mainGoal.text}
+          className="mt-4 flex flex-col items-center rounded-md px-1.5 py-1 transition-colors hover:bg-mist"
+        >
+          <span className="text-[10px] font-bold tracking-wider uppercase text-coral leading-none">
+            {weeksLeft}w
+          </span>
+          <span className="text-[9px] italic text-linen leading-tight mt-0.5">
+            left
+          </span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onEditGoal}
+          aria-label="Set main goal"
+          className="mt-4 flex h-8 w-8 items-center justify-center rounded-pill border border-dashed border-linen text-linen transition-colors hover:border-coral hover:text-coral"
+        >
+          <span aria-hidden className="text-sm">★</span>
+        </button>
+      )}
+
+      {/* Thin divider */}
+      <div className="mt-4 h-px w-6 bg-mist" />
+
       {/* Team avatars stacked */}
-      <div className="flex flex-col items-center gap-2 mt-3">
+      <div className="flex flex-col items-center gap-2 mt-4">
         {members.map((m) => {
           const label =
             m.display_name?.trim() ||
@@ -310,6 +352,8 @@ function CollapsedRail({
           </span>
         </button>
       </div>
+
+      <div className="flex-1" />
 
       {/* Bottom: user avatar */}
       <div className="flex flex-col items-center gap-2">
