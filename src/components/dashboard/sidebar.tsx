@@ -259,9 +259,6 @@ function ExpandedSidebar({
         <span className="truncate text-[13px] font-medium text-charcoal">
           {myProfile.display_name}
         </span>
-        <span className="ml-auto cursor-pointer text-xs text-linen hover:text-charcoal-soft">
-          ⚙
-        </span>
       </div>
     </div>
   );
