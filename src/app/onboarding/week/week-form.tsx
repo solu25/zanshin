@@ -12,8 +12,14 @@ const EXAMPLE_SLICES = [
   "Schedule 5 user interviews",
 ];
 
-export function WeekForm() {
-  const [text, setText] = useState("");
+export function WeekForm({
+  initialText = "",
+  carriedFromLastWeek = false,
+}: {
+  initialText?: string;
+  carriedFromLastWeek?: boolean;
+}) {
+  const [text, setText] = useState(initialText);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -40,6 +46,11 @@ export function WeekForm() {
           disabled={pending}
           className="w-full rounded-input border border-coral bg-white px-4 py-3.5 text-lg text-charcoal placeholder:text-linen focus:outline-none disabled:opacity-50"
         />
+        {carriedFromLastWeek && (
+          <p className="mt-2 text-xs italic text-linen">
+            ↻ Carried over from last week — keep it or rewrite it.
+          </p>
+        )}
       </div>
 
       <div className="rounded-card border border-mist bg-white p-5">

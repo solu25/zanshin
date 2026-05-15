@@ -63,8 +63,9 @@ export default function LoginPage() {
       return;
     }
 
-    // Route to onboarding (the / page also redirects there if no team yet).
-    router.push("/onboarding/team");
+    // Route to the home page — it sends new users to onboarding and
+    // onboarded users straight to the dashboard.
+    router.push("/");
     router.refresh();
   }
 

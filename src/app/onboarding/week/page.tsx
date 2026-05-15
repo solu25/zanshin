@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { OnboardingStepper } from "@/components/onboarding-stepper";
-import { isoWeekMonday } from "@/lib/dates";
+import { isoWeekMonday, addDaysISO } from "@/lib/dates";
 import { WeekForm } from "./week-form";
 
 export default async function WeekStepPage({
@@ -41,12 +41,25 @@ export default async function WeekStepPage({
   const weekStart = isoWeekMonday();
   const { data: existingWeekly } = await supabase
     .from("weekly_goals")
-    .select("id")
+    .select("id, text")
     .eq("team_id", teamId)
     .eq("week_start", weekStart)
     .limit(1);
   if (!isEdit && existingWeekly && existingWeekly.length > 0)
     redirect("/");
+
+  // Pre-fill the input: this week's goal if revisiting, otherwise carry over
+  // last week's goal so a multi-week effort doesn't need retyping.
+  const { data: lastWeekly } = await supabase
+    .from("weekly_goals")
+    .select("text")
+    .eq("team_id", teamId)
+    .eq("week_start", addDaysISO(weekStart, -7))
+    .limit(1);
+  const thisWeekText = existingWeekly?.[0]?.text ?? "";
+  const lastWeekText = lastWeekly?.[0]?.text ?? "";
+  const initialText = thisWeekText || lastWeekText;
+  const carriedFromLastWeek = !thisWeekText && !!lastWeekText;
 
   // Format deadline for display
   const deadlineLabel = new Date(mainGoal.deadline).toLocaleDateString("en-US", {
@@ -95,7 +108,10 @@ export default async function WeekStepPage({
           you got it done.
         </p>
 
-        <WeekForm />
+        <WeekForm
+          initialText={initialText}
+          carriedFromLastWeek={carriedFromLastWeek}
+        />
       </div>
     </div>
   );
