@@ -34,7 +34,7 @@ export default async function TeamStepPage({
         <div className="inline-flex items-center gap-2">
           <span className="h-0.5 w-3 bg-coral" />
           <span className="text-[10px] font-bold tracking-[1.8px] text-coral uppercase">
-            Step 1 of 4 · Your team
+            Step 1 of 3 · Your team
           </span>
         </div>
 

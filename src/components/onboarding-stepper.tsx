@@ -1,12 +1,14 @@
 import Link from "next/link";
 
+// "tools" stays in the union so the archived src/app/onboarding/_tools page
+// still type-checks. It's intentionally absent from STEPS — the Connect step
+// is archived, see the _tools folder.
 type Step = "team" | "goal" | "week" | "tools";
 
 const STEPS: { key: Step; label: string }[] = [
   { key: "team", label: "TEAM" },
   { key: "goal", label: "MAIN GOAL" },
   { key: "week", label: "THIS WEEK" },
-  { key: "tools", label: "CONNECT" },
 ];
 
 /**

@@ -35,5 +35,5 @@ export async function setWeeklyGoal(formData: FormData) {
 
   if (error) return { ok: false, error: error.message } as const;
 
-  redirect("/onboarding/tools");
+  redirect("/");
 }

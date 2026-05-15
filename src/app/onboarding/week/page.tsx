@@ -36,7 +36,8 @@ export default async function WeekStepPage({
   const mainGoal = mainGoals?.[0];
   if (!mainGoal) redirect("/onboarding/goal");
 
-  // If a weekly goal already exists for THIS week, skip ahead (unless revisiting via back).
+  // If a weekly goal already exists for THIS week, onboarding is done — go to
+  // the dashboard (unless revisiting via back).
   const weekStart = isoWeekMonday();
   const { data: existingWeekly } = await supabase
     .from("weekly_goals")
@@ -45,7 +46,7 @@ export default async function WeekStepPage({
     .eq("week_start", weekStart)
     .limit(1);
   if (!isEdit && existingWeekly && existingWeekly.length > 0)
-    redirect("/onboarding/tools");
+    redirect("/");
 
   // Format deadline for display
   const deadlineLabel = new Date(mainGoal.deadline).toLocaleDateString("en-US", {
@@ -82,7 +83,7 @@ export default async function WeekStepPage({
         <div className="mt-6 inline-flex items-center gap-2">
           <span className="h-0.5 w-3 bg-coral" />
           <span className="text-[10px] font-bold tracking-[1.8px] text-coral uppercase">
-            Step 3 of 4 · This week
+            Step 3 of 3 · This week
           </span>
         </div>
 

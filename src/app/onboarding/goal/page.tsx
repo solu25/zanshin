@@ -49,7 +49,7 @@ export default async function GoalStepPage({
         <div className="inline-flex items-center gap-2">
           <span className="h-0.5 w-3 bg-coral" />
           <span className="text-[10px] font-bold tracking-[1.8px] text-coral uppercase">
-            Step 2 of 4 · Main goal · ~3 months
+            Step 2 of 3 · Main goal · ~3 months
           </span>
         </div>
 
